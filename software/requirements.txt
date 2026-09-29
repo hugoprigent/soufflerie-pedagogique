@@ -1,0 +1,9 @@
+numpy==1.24.3
+opencv-python==4.8.1.78
+RPi.GPIO==0.7.1
+hx711==1.1.1
+matplotlib==3.7.2
+picamera2==0.3.12
+smbus2
+# Optional LED module, imported by src/led_control.py
+spidev
