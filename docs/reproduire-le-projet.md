@@ -8,7 +8,7 @@ Ce guide rassemble les fichiers et les contrôles nécessaires pour refaire un b
 | --- | --- | --- |
 | Position des pièces | [Assemblage STEP](../cad/assemblage-onshape.step) | Ouvrir dans un logiciel CAO, inspecter les interfaces et mesurer les cotes utiles. |
 | Géométrie de chaque pièce | [23 STEP séparés](../cad/step/) | Préparer les plans, l'impression ou l'usinage selon la pièce. |
-| Aspect et vue d'ensemble | [Photo](../assets/banc-reel.jpg) et [rendu 3D](../assets/rendu-assemblage.png) | Comparer prototype et CAO ; le rendu est une interprétation visuelle. |
+| Aspect et vue d'ensemble | [Photo](../assets/banc-reel.jpg) et [modèle 3D](../assets/rendu-assemblage.png) | Voir la soufflerie et ses principaux sous-ensembles. |
 | Logiciel | [Tableau de bord et modules](../software/) | Reprendre les fonctions GPIO, caméra, affichage et export. |
 | Câblage | [Schéma de reprise](schema-cablage.svg) et [notes électriques](electronique-cablage.md) | Relever les connexions réelles puis établir un schéma final. |
 
