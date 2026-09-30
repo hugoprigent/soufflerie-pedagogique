@@ -4,7 +4,7 @@ Cette soufflerie de table permet d'observer l'écoulement autour d'une maquette 
 
 ![Soufflerie pédagogique avec section d'essai transparente](assets/banc-reel.jpg)
 
-*La soufflerie avec sa section d'essai transparente et son instrumentation.*
+*La soufflerie avec sa section d'essai et son instrumentation.*
 
 ![Modèle 3D de la soufflerie](assets/rendu-assemblage.png)
 
