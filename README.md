@@ -10,6 +10,10 @@ Cette soufflerie de table permet d'observer l'écoulement autour d'une maquette 
 
 *Modèle 3D de la soufflerie : conduits, section d'essai et supports.*
 
+## Vidéo de présentation
+
+[Voir la soufflerie en vidéo sur YouTube](https://youtu.be/92m-7GADWI4).
+
 ## Le projet en bref
 
 | Domaine | Ce qui est disponible |
