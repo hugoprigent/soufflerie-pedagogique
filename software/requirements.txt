@@ -1,9 +1,3 @@
-numpy==1.24.3
-opencv-python==4.8.1.78
-RPi.GPIO==0.7.1
-hx711==1.1.1
-matplotlib==3.7.2
-picamera2==0.3.12
-smbus2
-# Optional LED module, imported by src/led_control.py
-spidev
+# Les modules matériels, Picamera2, OpenCV, NumPy et Matplotlib sont installés
+# depuis Raspberry Pi OS avec apt (voir docs/installation-utilisation.md).
+smbus2>=0.4,<1

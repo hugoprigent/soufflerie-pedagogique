@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
+  <title id="title">Schéma de reprise du câblage de la soufflerie</title>
+  <desc id="desc">Les connexions déclarées par le logiciel sont en trait plein. Les alimentations et l'étage de commande du ventilateur à vérifier sur le prototype sont en pointillés.</desc>
+  <style>
+    text{font-family:Arial,Helvetica,sans-serif;fill:#192634} .title{font-size:28px;font-weight:700} .subtitle{font-size:16px;fill:#526579}
+    .head{font-size:19px;font-weight:700} .body{font-size:16px} .small{font-size:14px;fill:#526579}
+    .box{fill:#f5f8fb;stroke:#7190ad;stroke-width:2} .pi{fill:#e7f0ff;stroke:#2765aa;stroke-width:3}
+    .line{fill:none;stroke:#2765aa;stroke-width:3} .unknown{fill:none;stroke:#c06524;stroke-width:3;stroke-dasharray:10 7}
+    .note{fill:#fff3e7;stroke:#c06524;stroke-width:2}
+  </style>
+  <rect width="1200" height="820" fill="#fff"/>
+  <text x="48" y="57" class="title">Soufflerie — schéma de reprise du câblage</text>
+  <text x="48" y="85" class="subtitle">Trait bleu : affectation du logiciel actuel · Pointillés orange : à relever et valider sur le banc hors tension</text>
+
+  <rect x="462" y="145" width="310" height="340" rx="18" class="pi"/>
+  <text x="489" y="181" class="head">Raspberry Pi</text>
+  <text x="489" y="216" class="body">GPIO18 / pin 12 : PWM</text>
+  <text x="489" y="249" class="body">GPIO17 / pin 11 : tachymètre</text>
+  <text x="489" y="282" class="body">GPIO23 / pin 16 : HX711 DT</text>
+  <text x="489" y="315" class="body">GPIO24 / pin 18 : HX711 SCK</text>
+  <text x="489" y="348" class="body">GPIO2 / pin 3 : I²C SDA</text>
+  <text x="489" y="381" class="body">GPIO3 / pin 5 : I²C SCL</text>
+  <text x="489" y="414" class="body">GPIO10 / pin 19 : LED SPI</text>
+  <text x="489" y="452" class="small">Numérotation GPIO BCM / physique</text>
+
+  <rect x="48" y="156" width="265" height="110" rx="14" class="box"/>
+  <text x="70" y="191" class="head">Caméra</text>
+  <text x="70" y="224" class="body">Nappe vers connecteur CSI</text>
+  <path d="M313 210 H462" class="line"/>
+  <text x="352" y="197" class="small">CSI</text>
+
+  <rect x="48" y="318" width="265" height="110" rx="14" class="box"/>
+  <text x="70" y="353" class="head">HX711</text>
+  <text x="70" y="385" class="body">DT / SCK vers le Pi</text>
+  <text x="70" y="408" class="small">VCC / GND : à identifier</text>
+  <path d="M313 370 H392 V298 H462" class="line"/>
+  <text x="322" y="353" class="small">DT 23 / SCK 24</text>
+
+  <rect x="48" y="482" width="265" height="105" rx="14" class="box"/>
+  <text x="70" y="517" class="head">Cellule de charge</text>
+  <text x="70" y="548" class="small">Fils et polarité selon sa fiche</text>
+  <path d="M181 482 V428" class="unknown"/>
+
+  <rect x="873" y="155" width="275" height="130" rx="14" class="box"/>
+  <text x="895" y="190" class="head">Ventilateur</text>
+  <text x="895" y="223" class="body">PWM et tachymètre</text>
+  <text x="895" y="251" class="small">Type et brochage à identifier</text>
+  <path d="M772 232 H873" class="line"/>
+  <text x="788" y="218" class="small">GPIO18 / 17</text>
+
+  <rect x="873" y="348" width="275" height="126" rx="14" class="box"/>
+  <text x="895" y="383" class="head">Modules facultatifs</text>
+  <text x="895" y="415" class="body">BMP280/BME280, Modulino</text>
+  <text x="895" y="443" class="small">I²C ; LED SPI selon montage</text>
+  <path d="M772 365 H818 V411 H873" class="line"/>
+
+  <rect x="345" y="565" width="270" height="95" rx="14" class="note"/>
+  <text x="367" y="598" class="head">Alimentation du Pi</text>
+  <text x="367" y="628" class="small">Source adaptée, référence à relever</text>
+  <path d="M480 565 V485" class="unknown"/>
+
+  <rect x="677" y="565" width="285" height="95" rx="14" class="note"/>
+  <text x="699" y="598" class="head">Alimentation ventilateur</text>
+  <text x="699" y="628" class="small">Séparée ; tension à vérifier</text>
+  <path d="M820 565 V521 H1167 V221 H1148" class="unknown"/>
+  <text x="52" y="690" class="small">HX711 : tension, masse et niveaux logiques à vérifier. Notes anciennes : GPIO5/6, code actuel : GPIO23/24.</text>
+  <text x="52" y="716" class="small">Ventilateur : commande PWM directe ou étage MOSFET selon matériel réel. Ne pas alimenter un moteur depuis un GPIO.</text>
+  <text x="52" y="742" class="small">Ce diagramme aide au relevé du prototype ; il ne valide pas un câblage prêt à mettre sous tension.</text>
+</svg>

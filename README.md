@@ -1,93 +1,54 @@
-# Soufflerie pédagogique
+# Soufflerie pédagogique — ENSAM, 2026
 
-Petite soufflerie réalisée en équipe à l'ENSAM. Je me suis occupé du logiciel : un Raspberry Pi
-pilote le ventilateur, mesure la force sur la maquette, filme l'écoulement et sert une interface
-web qu'on ouvre depuis n'importe quel téléphone ou ordinateur.
+Une soufflerie de table conçue pour observer l'écoulement autour d'une maquette et explorer une chaîne de mesure : commande du ventilateur, cellule de charge, caméra et interface d'acquisition sur Raspberry Pi. Ce dépôt rassemble le modèle mécanique, le logiciel et les indications nécessaires pour comprendre le banc et préparer sa reproduction.
 
-**Projet en cours.** Le banc tourne et enregistre des essais, mais la vitesse d'air et la force ne
-sont pas encore calibrées par rapport à une mesure de référence : les valeurs affichées sont des
-estimations.
+![Photographie du banc réel : veine transparente, conduits blancs et électronique visible](assets/banc-reel.jpg)
 
-![Interface de supervision pendant un essai](assets/dashboard.jpg)
+*Banc réel photographié en mai 2026. La photo montre l'état du prototype, avec câblage encore apparent ; elle ne démontre aucune performance de mesure.*
 
-*L'interface, ventilateur à l'arrêt : image caméra à gauche ; force, ventilateur, grandeurs
-aérodynamiques et spectrogramme à droite.*
+![Rendu Blender de l'assemblage CAO avec couleurs inspirées du prototype](assets/rendu-assemblage.png)
 
-## Équipe
+*Rendu du STEP d'assemblage, avec matériaux et couleurs interprétés d'après la photo. Il illustre la conception et ne remplace pas une vérification de fabrication.*
 
-- **Ugo** : conception mécanique
-- **Thadeo** : électronique
-- **Hugo Prigent** : logiciel et acquisition de données
+## Le projet en bref
 
-## Ce que fait le logiciel
-
-- **Ventilateur** : commande PWM à 25 kHz, lecture du régime par le tachymètre, balayages
-  automatiques de consigne.
-- **Force** : cellule de charge et HX711 lus à 20 Hz, avec tare, moyenne glissante et calibration
-  depuis l'interface.
-- **Image** : flux optique OpenCV (Farneback) sur la fumée pour estimer le mouvement de l'air ;
-  réglages caméra, zone d'intérêt et calibration pixels/mètre.
-- **Vitesse d'air** : deux estimations, l'une tirée du régime ventilateur (fiche technique et
-  rapport de contraction de la veine), l'autre de l'image, fusionnées par un filtre de Kalman.
-- **Grandeurs dérivées** : nombre de Reynolds, Strouhal, coefficient F/(qA), spectre de la force
-  (FFT), variance d'Allan pour le bruit du capteur.
-- **Enregistrement** : sessions en CSV avec leurs métadonnées de calibration, vidéo, export JSON et
-  rapport PDF.
-- **Autres capteurs** : pression BMP280 et bouton Modulino sur le bus I²C, bandeau LED.
-- **Réseau** : le Pi peut créer son propre point d'accès Wi-Fi ; l'interface est alors sur
-  `http://192.168.8.1:8080`.
-
-```mermaid
-flowchart LR
-    A[Cellule de force + HX711] --> B[Acquisition Python]
-    C[Caméra Raspberry Pi] --> D[Flux optique OpenCV]
-    E[Ventilateur + tachymètre] <--> B
-    B --> F[État partagé]
-    D --> F
-    F --> G[Interface web]
-    F --> H[Sessions CSV / vidéo / PDF]
-```
-
-## Contenu du dépôt
-
-| Chemin | Rôle |
+| Domaine | Ce qui est disponible |
 | --- | --- |
-| `software/dashboard.py` | Serveur HTTP, interface web et boucles d'acquisition |
-| `software/config.py` | Câblage (GPIO, I²C), géométrie de la veine, calibrations par défaut |
-| `software/src/` | Ventilateur, capteurs, traitement d'image, analyse |
-| `examples/session-2026-05-28.csv` | Un export de session réel : 12 000 mesures à 20 Hz |
+| Mécanique | [Assemblage Onshape exporté en STEP](cad/assemblage-onshape.step), [23 modèles STEP de pièces](cad/step/), [scène Blender](cad/rendu-assemblage.blend) et [guide CAO](cad/README.md) |
+| Électronique | Architecture Raspberry Pi, ventilateur, cellule de charge et caméra ; [schéma de reprise](docs/schema-cablage.svg) et [câblage à confirmer sur le banc](docs/electronique-cablage.md) |
+| Logiciel | [Supervision Python](software/) : PWM et tachymètre, acquisition de force, caméra et traitement d'image, interface HTTP et export CSV |
+| Données | [Un export de session](examples/session-2026-05-28.csv) avec [explication des colonnes et limites](docs/donnees-et-limites.md) |
 
-## Lancer sur le Raspberry Pi
+Le banc comporte une section d'essai visible entre un convergent et un diffuseur. La maquette se place dans la veine ; la chaîne de force passe par une cellule de charge et le convertisseur HX711. Le tableau de bord affiche les signaux et permet la commande et l'enregistrement. La caméra sert à la visualisation et à un traitement de flux optique. Les valeurs de vitesse et les coefficients dérivés exigent une calibration indépendante avant toute interprétation quantitative.
 
-Il faut un Raspberry Pi OS avec une caméra compatible Picamera2 et le matériel câblé comme dans
-`software/config.py`.
+![Capture du tableau de bord avec retour caméra](assets/dashboard.png)
 
-```bash
-cd software
-pip install -r requirements.txt
-python3 dashboard.py
-```
+*Capture du 28 mai 2026 : le ventilateur est à l'arrêt sur cette image.*
 
-Puis ouvrir `http://<adresse-du-pi>:8080`. Les enregistrements vont dans `software/data/`
-(modifiable avec la variable `SOUFFLERIE_DATA_DIR`). L'interface n'a pas d'authentification et
-commande du matériel : elle est faite pour le réseau local du banc.
+## Contribution
 
-## Le fichier d'exemple
-
-Les lignes qui commencent par `#` donnent la calibration utilisée pendant l'essai (offset et gain
-du HX711, dimensions de la maquette, masse volumique de l'air…). Colonnes :
-
-| Colonne | Contenu |
+| Prénom | Contribution |
 | --- | --- |
-| `t_s` | Temps en secondes |
-| `duty_pct` | Consigne PWM du ventilateur (%) |
-| `fan_rpm` | Régime mesuré |
-| `delta_adu`, `force_g`, `force_N` | Force brute puis convertie |
-| `flow_mag_px` | Amplitude du flux optique |
-| `airspeed_flow_ms`, `airspeed_fan_ms` | Vitesse d'air estimée par l'image et par le ventilateur |
+| Hugo Prigent | Électronique, logiciel et acquisition de données |
 
-## Prochaines étapes
+Projet pédagogique réalisé à l'ENSAM en 2026.
 
-- Calibrer la vitesse d'air avec un anémomètre et la force avec des masses étalons.
-- Sortir l'interface HTML de `dashboard.py`, qui fait aujourd'hui plus de 7 000 lignes.
-- Ajouter un mode de relecture pour rejouer une session sans le banc.
+## Parcourir le dépôt
+
+- [Reproduire le projet](docs/reproduire-le-projet.md) : fichiers 3D, nomenclature de reprise, ordre de fabrication, montage et points à relever sur le prototype.
+- [CAO et fabrication](cad/README.md) : différence entre l'assemblage positionné et les pièces séparées, contenu et précautions d'export.
+- [Mécanique et assemblage](docs/mecanique-fabrication.md) : sous-ensembles visibles, ordre de montage proposé et vérifications avant fabrication.
+- [Électronique et câblage](docs/electronique-cablage.md) : schéma annoté, affectation des broches selon le code, divergences des notes historiques et contrôles à effectuer.
+- [Installation et utilisation](docs/installation-utilisation.md) : environnement Raspberry Pi, lancement, accès local et sécurité réseau.
+- [Données et limites](docs/donnees-et-limites.md) : ce que l'export permet d'examiner et ce qu'il ne valide pas.
+- [Points à lever avant publication](docs/publication.md) : licences, câblage réel et validation matérielle.
+
+## État de vérification
+
+La syntaxe Python, la structure des fichiers et les en-têtes STEP ont été contrôlés sur une copie locale. Aucun nouvel essai du banc, de la caméra, des GPIO ou de l'installation Raspberry Pi n'a été réalisé pour cette préparation. Les documents historiques présentent des configurations électriques et des résultats contradictoires ; ce dépôt les signale au lieu de les reprendre comme des mesures validées.
+
+Le serveur écoute par défaut sur `127.0.0.1:8080`. L'accès depuis un autre appareil doit être activé explicitement et limité à un réseau maîtrisé : l'application ne comporte pas d'authentification. Voir le [guide d'utilisation](docs/installation-utilisation.md).
+
+## Réutilisation
+
+Le choix d'une licence pour le code, la documentation, les photos et les modèles 3D reste à confirmer avant publication publique. L'absence de fichier de licence ne vaut pas autorisation de réutilisation.

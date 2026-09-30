@@ -46,11 +46,14 @@ from src.analysis import (
     adu_to_grams, grams_to_newtons,
     KalmanV, SpectrogramBuffer, bootstrap_mean_ci, wake_drag_per_span,
 )
+from src.http_security import request_allowed
 
 # ---------- Calibration persistante ----------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_ROOT = os.path.abspath(os.path.expanduser(os.environ.get("SOUFFLERIE_DATA_DIR", os.path.join(BASE_DIR, "data"))))
 CALIB_FILE = os.path.join(DATA_ROOT, "calib.json")
+HTTP_BIND_HOST = os.environ.get("SOUFFLERIE_BIND_HOST", "127.0.0.1")
+WIFI_CONTROL_ENABLED = os.environ.get("SOUFFLERIE_ENABLE_WIFI_CONTROL") == "1"
 
 # ---------- GPIO global ----------
 GPIO.setwarnings(False)
@@ -2181,7 +2184,7 @@ select{background:#0d0d0d;color:#eee;border:1px solid #333;border-radius:3px;pad
  <div class="card">
   <h2>Hotspot Soufflerie-ENSAM</h2>
   <div class="row"><span class="lab">SSID</span><b class="val">Soufflerie-ENSAM</b></div>
-  <div class="row"><span class="lab">Mot de passe</span><b class="val">soufflerie</b></div>
+  <div class="row"><span class="lab">Mot de passe</span><b class="val">défini sur le Pi</b></div>
   <div class="row"><span class="lab">IP Pi</span><b class="val">192.168.8.1</b></div>
   <div class="row"><span class="lab">Dashboard</span><b class="val">http://192.168.8.1:8080</b></div>
   <div style="display:flex;gap:8px;margin-top:10px">
@@ -2189,7 +2192,7 @@ select{background:#0d0d0d;color:#eee;border:1px solid #333;border-radius:3px;pad
    <button class="danger" onclick="hotspot(false)">Desactiver</button>
   </div>
   <div class="status" id="hotspot-st"></div>
-  <div class="note">Quand le hotspot est actif, le Pi ne peut plus se connecter a un autre WiFi. Dashboard accessible sur http://192.168.8.1:8080 depuis tout appareil connecte a Soufflerie-ENSAM.</div>
+  <div class="note">Commandes Wi-Fi désactivées par défaut. Pour un accès réseau, configurer explicitement SOUFFLERIE_BIND_HOST et les droits NetworkManager sur le Pi.</div>
  </div>
 
  <div class="card">
@@ -2705,12 +2708,12 @@ async function setAero(){
 async function refreshWifi(){
  const st=document.getElementById("wifi-st");
  st.textContent="...";
- const r=await fetch("/wifi/status").then(x=>x.json()).catch(()=>null);
+ const r=await fetch("/wifi/status",{method:"POST"}).then(x=>x.json()).catch(()=>null);
  if(!r){st.textContent="erreur";return;}
  st.textContent="";
  document.getElementById("wifi-mode").textContent=r.hotspot_active?"HOTSPOT (Soufflerie-ENSAM)":r.client_ssid?"CLIENT — "+r.client_ssid:"non connecte";
  document.getElementById("wifi-ip").textContent=r.wlan0_ip||"—";
- document.getElementById("wifi-ssid").textContent=r.client_ssid||r.hotspot_active?"Soufflerie-ENSAM":"—";
+ document.getElementById("wifi-ssid").textContent=r.client_ssid||(r.hotspot_active?"Soufflerie-ENSAM":"—");
 }
 async function hotspot(en){
  const st=document.getElementById("hotspot-st");
@@ -2734,15 +2737,21 @@ async function connectWifi(){
 async function scanWifi(){
  const d=document.getElementById("wifi-scan-list");
  d.style.color="#fa0"; d.textContent="scan en cours...";
- const r=await fetch("/wifi/scan").then(x=>x.json()).catch(()=>null);
+ const r=await fetch("/wifi/scan",{method:"POST"}).then(x=>x.json()).catch(()=>null);
  if(!r||!r.ok){d.style.color="#f44";d.textContent="Erreur: "+(r&&r.err||"reseau");return;}
  d.style.color="#eee";
- d.innerHTML=r.networks.map(n=>{
+ d.replaceChildren();
+ for(const n of r.networks){
   const bars=n.signal>-55?"▮▮▮▮":n.signal>-65?"▮▮▮▯":n.signal>-75?"▮▮▯▯":"▮▯▯▯";
-  return `<div style="padding:5px 0;border-bottom:1px solid #1e1e1e;cursor:pointer;display:flex;justify-content:space-between" onclick="document.getElementById('wifi-new-ssid').value='${n.ssid.replace(/'/g,"\\'")}'">`+
-   `<span style="color:#4af">${n.ssid}</span>`+
-   `<span style="color:#888;font-size:11px">${bars} ${n.signal}dBm ${n.security?"🔒":""}</span></div>`;
- }).join("")||"<span style='color:#666'>aucun réseau trouvé</span>";
+  const row=document.createElement("div");
+  row.style.cssText="padding:5px 0;border-bottom:1px solid #1e1e1e;cursor:pointer;display:flex;justify-content:space-between";
+  row.addEventListener("click",()=>{document.getElementById("wifi-new-ssid").value=n.ssid;});
+  const name=document.createElement("span"); name.style.color="#4af"; name.textContent=n.ssid;
+  const info=document.createElement("span"); info.style.cssText="color:#888;font-size:11px";
+  info.textContent=`${bars} ${n.signal}dBm ${n.security?"🔒":""}`;
+  row.append(name,info); d.append(row);
+ }
+ if(!r.networks.length)d.textContent="aucun réseau trouvé";
 }
 refreshWifi();
 
@@ -5225,13 +5234,16 @@ class Handler(BaseHTTPRequestHandler):
                     self.wfile.write(chunk)
 
     def do_GET(self):
+        if not request_allowed(self.headers.get("Host"), self.headers.get("Origin"),
+                               self.headers.get("Sec-Fetch-Site"), HTTP_BIND_HOST):
+            self.send_error(403); return
         path = urlparse(self.path).path
         # Captive portal detection (iOS, Android, Windows) → redirect to dashboard
         if path in ("/hotspot-detect.html", "/library/test/success.html",
                     "/generate_204", "/connecttest.txt", "/ncsi.txt",
                     "/redirect", "/canonical.html"):
             self.send_response(302)
-            self.send_header("Location", "http://192.168.8.1:8080/")
+            self.send_header("Location", "/")
             self.end_headers()
             return
         if path == "/":
@@ -5877,6 +5889,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(404); self.end_headers()
 
     def do_POST(self):
+        if not request_allowed(self.headers.get("Host"), self.headers.get("Origin"),
+                               self.headers.get("Sec-Fetch-Site"), HTTP_BIND_HOST):
+            self.send_error(403); return
         u = urlparse(self.path)
         path, qs = u.path, parse_qs(u.query)
 
@@ -7188,25 +7203,33 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "err": str(e)})
 
         elif path == "/wifi/hotspot":
+            if not WIFI_CONTROL_ENABLED:
+                self._json({"ok": False, "err": "Commande Wi-Fi désactivée (SOUFFLERIE_ENABLE_WIFI_CONTROL=1)"}); return
             enable = qs.get("enable", ["0"])[0] == "1"
             try:
                 if enable:
-                    subprocess.run(["sudo", "-S", "nmcli", "con", "up", "Soufflerie-AP"],
-                                   input="dax\n", capture_output=True, text=True, timeout=15)
-                    subprocess.run(["sudo", "-S", "nmcli", "con", "modify", "Soufflerie-AP",
+                    r = subprocess.run(["nmcli", "con", "up", "Soufflerie-AP"],
+                                       capture_output=True, text=True, timeout=15)
+                    if r.returncode != 0:
+                        self._json({"ok": False, "err": (r.stderr or r.stdout).strip()}); return
+                    subprocess.run(["nmcli", "con", "modify", "Soufflerie-AP",
                                     "connection.autoconnect", "yes"],
-                                   input="dax\n", capture_output=True, text=True, timeout=10)
+                                   capture_output=True, text=True, timeout=10)
                 else:
-                    subprocess.run(["sudo", "-S", "nmcli", "con", "down", "Soufflerie-AP"],
-                                   input="dax\n", capture_output=True, text=True, timeout=10)
-                    subprocess.run(["sudo", "-S", "nmcli", "con", "modify", "Soufflerie-AP",
+                    r = subprocess.run(["nmcli", "con", "down", "Soufflerie-AP"],
+                                       capture_output=True, text=True, timeout=10)
+                    if r.returncode != 0:
+                        self._json({"ok": False, "err": (r.stderr or r.stdout).strip()}); return
+                    subprocess.run(["nmcli", "con", "modify", "Soufflerie-AP",
                                     "connection.autoconnect", "no"],
-                                   input="dax\n", capture_output=True, text=True, timeout=10)
+                                   capture_output=True, text=True, timeout=10)
                 self._json({"ok": True})
             except Exception as e:
                 self._json({"ok": False, "err": str(e)})
 
         elif path == "/wifi/connect":
+            if not WIFI_CONTROL_ENABLED:
+                self._json({"ok": False, "err": "Commande Wi-Fi désactivée (SOUFFLERIE_ENABLE_WIFI_CONTROL=1)"}); return
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length).decode()
             params = parse_qs(body)
@@ -7215,12 +7238,12 @@ class Handler(BaseHTTPRequestHandler):
             if not ssid:
                 self._json({"ok": False, "err": "ssid requis"}); return
             try:
-                subprocess.run(["sudo", "-S", "nmcli", "con", "down", "Soufflerie-AP"],
-                               input="dax\n", capture_output=True, text=True, timeout=10)
-                cmd = ["sudo", "-S", "nmcli", "device", "wifi", "connect", ssid]
+                subprocess.run(["nmcli", "con", "down", "Soufflerie-AP"],
+                               capture_output=True, text=True, timeout=10)
+                cmd = ["nmcli", "device", "wifi", "connect", ssid]
                 if password:
                     cmd += ["password", password]
-                r = subprocess.run(cmd, input="dax\n", capture_output=True, text=True, timeout=30)
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
                 if r.returncode == 0:
                     time.sleep(2)
                     ip_r = subprocess.run(["ip", "-4", "addr", "show", "wlan0"],
@@ -7265,9 +7288,9 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print("Dashboard: http://192.168.7.2:8080")
+    print(f"Dashboard: http://{HTTP_BIND_HOST}:8080")
     try:
-        ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+        ThreadingHTTPServer((HTTP_BIND_HOST, 8080), Handler).serve_forever()
     except KeyboardInterrupt:
         pass
     finally:

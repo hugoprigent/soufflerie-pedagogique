@@ -1,6 +1,6 @@
 """Controleur ruban LED WS2812B via SPI (GPIO10 / MOSI / pin 19).
 
-Pas de root requis : utilise /dev/spidev0.0 (dax dans le groupe spi).
+Utilise /dev/spidev0.0 ; l'utilisateur du Pi doit avoir accès au groupe spi.
 Encodage : 1 SPI byte = 1 bit WS2812B a 8 MHz.
   0-bit : 0xC0 -> T0H=250ns  T0L=750ns
   1-bit : 0xF8 -> T1H=625ns  T1L=375ns
