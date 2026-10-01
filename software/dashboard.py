@@ -838,7 +838,7 @@ def analysis_loop():
             Re = reynolds(v, c, rho, AIR_VISCOSITY)
             St = strouhal(f_hz, c, v)
             # On suppose F mesure = portance ou trainee selon orientation
-            # Ici on calcule le coeff generique. Hugo interprete selon montage.
+            # Coefficient generique a interpreter selon le montage.
             C = aero_coeff(F, v, A, rho)
             with state_lock:
                 state["force_mean"] = round(m, 5)
@@ -2112,7 +2112,7 @@ select{background:#0d0d0d;color:#eee;border:1px solid #333;border-radius:3px;pad
   <div class="row"><span class="lab">Strouhal = f L / V</span><b class="val" id="ast">0</b></div>
   <div class="row"><span class="lab">C = F / (q A)</span><b class="val" id="acc">0</b></div>
   <div class="note">Selon orientation de la cellule: C = CL si force verticale (portance),
-   C = CD si force horizontale (trainee). Hugo interprete selon ton montage.</div>
+   C = CD si force horizontale (trainee). Adapter l'interpretation au montage.</div>
  </div>
 </div>
 

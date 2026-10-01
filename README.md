@@ -29,14 +29,6 @@ Le banc comporte une section d'essai visible entre un convergent et un diffuseur
 
 *Capture du 28 mai 2026 : le ventilateur est à l'arrêt sur cette image.*
 
-## Contribution
-
-| Prénom | Contribution |
-| --- | --- |
-| Hugo Prigent | Électronique, logiciel et acquisition de données |
-
-Projet pédagogique réalisé à l'ENSAM en 2026.
-
 ## Parcourir le dépôt
 
 - [Reproduire le projet](docs/reproduire-le-projet.md) : fichiers 3D, nomenclature de reprise, ordre de fabrication, montage et points à relever sur le prototype.
